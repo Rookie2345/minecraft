@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs');
-const { query } = require('../config/db');
+const { getAdminByUsername, getAdminById, updateAdminPassword } = require('../config/db');
 const { generateAdminToken } = require('../middleware/auth');
 
 async function login(req, res) {
@@ -13,9 +13,9 @@ async function login(req, res) {
       });
     }
 
-    const result = await query('SELECT id, username, password_hash FROM admins WHERE username = $1', [username.trim()]);
-    if (result.rows.length === 0) {
-      // Timing attack protection: run dummy bcrypt compare
+    const admin = getAdminByUsername(username.trim());
+    if (!admin) {
+      // Dummy compare for timing attack protection
       await bcrypt.compare(password, '$2a$10$abcdefghijklmnopqrstuvwxyz1234567890abcdefghijklmnopqr');
       return res.status(401).json({
         success: false,
@@ -23,7 +23,6 @@ async function login(req, res) {
       });
     }
 
-    const admin = result.rows[0];
     const isMatch = await bcrypt.compare(password, admin.password_hash);
     if (!isMatch) {
       return res.status(401).json({
@@ -87,19 +86,18 @@ async function updatePassword(req, res) {
       });
     }
 
-    const adminResult = await query('SELECT id, password_hash FROM admins WHERE id = $1', [req.admin.id]);
-    if (adminResult.rows.length === 0) {
+    const admin = getAdminById(req.admin.id);
+    if (!admin) {
       return res.status(404).json({ success: false, error: 'Administrator not found.' });
     }
 
-    const admin = adminResult.rows[0];
     const isMatch = await bcrypt.compare(currentPassword, admin.password_hash);
     if (!isMatch) {
       return res.status(400).json({ success: false, error: 'Incorrect current password.' });
     }
 
     const newHash = await bcrypt.hash(newPassword, 12);
-    await query('UPDATE admins SET password_hash = $1 WHERE id = $2', [newHash, req.admin.id]);
+    updateAdminPassword(req.admin.id, newHash);
 
     return res.json({
       success: true,

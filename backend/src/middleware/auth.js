@@ -1,11 +1,7 @@
 const jwt = require('jsonwebtoken');
-const { query } = require('../config/db');
+const { getAdminById } = require('../config/db');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'minecraft_portal_dev_jwt_secret_change_in_production';
-
-if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32)) {
-  console.warn('[SECURITY WARNING] In production, JWT_SECRET should be a strong random secret with at least 32 characters.');
-}
 
 async function requireAdminAuth(req, res, next) {
   try {
@@ -28,9 +24,8 @@ async function requireAdminAuth(req, res, next) {
       });
     }
 
-    // Verify admin still exists in database
-    const adminResult = await query('SELECT id, username, created_at FROM admins WHERE id = $1', [decoded.adminId]);
-    if (adminResult.rows.length === 0) {
+    const admin = getAdminById(decoded.adminId);
+    if (!admin) {
       return res.status(401).json({
         success: false,
         error: 'Unauthorized: Administrator account no longer exists.'
@@ -38,8 +33,8 @@ async function requireAdminAuth(req, res, next) {
     }
 
     req.admin = {
-      id: adminResult.rows[0].id,
-      username: adminResult.rows[0].username
+      id: admin.id,
+      username: admin.username
     };
 
     next();
@@ -59,7 +54,7 @@ function generateAdminToken(admin) {
       username: admin.username
     },
     JWT_SECRET,
-    { expiresIn: '24h' }
+    { expiresIn: '7d' }
   );
 }
 

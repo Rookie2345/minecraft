@@ -1,0 +1,35 @@
+{
+  "admins": [
+    {
+      "id": 1,
+      "username": "testadmin",
+      "password_hash": "$2a$10$XXy8o1SXZLgxUkH/nBQu/er1SpdKfGfMcxM2fYLcD2Q8k4XdgrgIi",
+      "created_at": "2026-11-03T12:36:12.467Z"
+    }
+  ],
+  "server_settings": {
+    "java_address": "play.ourcraft.aternos.me",
+    "java_port": "25565",
+    "java_version": "26.3",
+    "java_launcher": "TLauncher",
+    "java_hosting": "Aternos",
+    "bedrock_address": "play.ourcraft.aternos.me",
+    "bedrock_port": "19132",
+    "bedrock_version": "Latest Bedrock",
+    "bedrock_platform": "Android & Bedrock Devices",
+    "bedrock_hosting": "Aternos",
+    "announcement": "Server is online!",
+    "updated_at": "2026-11-03T12:36:12.706Z"
+  },
+  "apk": {
+    "is_published": false,
+    "file_name": "Minecraft-Bedrock-v1.20.apk",
+    "download_url": "",
+    "file_size_formatted": "410 MB",
+    "version": "1.20.50",
+    "sha256_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "description": "Official companion client.",
+    "download_count": 1,
+    "updated_at": "2026-11-03T12:36:12.730Z"
+  }
+}

@@ -1,25 +1,8 @@
-const { query } = require('../config/db');
+const { getSettings, updateSettings } = require('../config/db');
 
-/**
- * Public endpoint: Get server details and connection instructions
- */
 async function getServerInfo(req, res) {
   try {
-    const result = await query('SELECT * FROM server_settings ORDER BY id ASC LIMIT 1');
-    const settings = result.rows[0] || {
-      java_address: '',
-      java_port: '25565',
-      java_version: '26.3',
-      java_launcher: 'TLauncher',
-      java_hosting: 'Aternos',
-      bedrock_address: '',
-      bedrock_port: '19132',
-      bedrock_version: 'Latest Bedrock',
-      bedrock_platform: 'Android and other supported Bedrock devices',
-      bedrock_hosting: 'Aternos',
-      announcement: 'Welcome to our Minecraft community! Server connection details are configured by the admin.'
-    };
-
+    const settings = getSettings();
     return res.json({
       success: true,
       data: {
@@ -56,9 +39,6 @@ async function getServerInfo(req, res) {
   }
 }
 
-/**
- * Admin protected endpoint: Update server settings
- */
 async function updateServerSettings(req, res) {
   try {
     const {
@@ -75,41 +55,24 @@ async function updateServerSettings(req, res) {
       announcement
     } = req.body;
 
-    const result = await query(
-      `UPDATE server_settings
-       SET java_address = $1,
-           java_port = $2,
-           java_version = $3,
-           java_launcher = $4,
-           java_hosting = $5,
-           bedrock_address = $6,
-           bedrock_port = $7,
-           bedrock_version = $8,
-           bedrock_platform = $9,
-           bedrock_hosting = $10,
-           announcement = $11,
-           updated_at = CURRENT_TIMESTAMP
-       WHERE id = (SELECT id FROM server_settings ORDER BY id ASC LIMIT 1)
-       RETURNING *`,
-      [
-        (java_address || '').trim(),
-        (java_port || '25565').trim(),
-        (java_version || '26.3').trim(),
-        (java_launcher || 'TLauncher').trim(),
-        (java_hosting || 'Aternos').trim(),
-        (bedrock_address || '').trim(),
-        (bedrock_port || '19132').trim(),
-        (bedrock_version || 'Latest Bedrock').trim(),
-        (bedrock_platform || 'Android and other supported Bedrock devices').trim(),
-        (bedrock_hosting || 'Aternos').trim(),
-        (announcement || '').trim()
-      ]
-    );
+    const updated = updateSettings({
+      java_address: (java_address || '').trim(),
+      java_port: (java_port || '25565').trim(),
+      java_version: (java_version || '26.3').trim(),
+      java_launcher: (java_launcher || 'TLauncher').trim(),
+      java_hosting: (java_hosting || 'Aternos').trim(),
+      bedrock_address: (bedrock_address || '').trim(),
+      bedrock_port: (bedrock_port || '19132').trim(),
+      bedrock_version: (bedrock_version || 'Latest Bedrock').trim(),
+      bedrock_platform: (bedrock_platform || 'Android & Bedrock Devices').trim(),
+      bedrock_hosting: (bedrock_hosting || 'Aternos').trim(),
+      announcement: (announcement || '').trim()
+    });
 
     return res.json({
       success: true,
       message: 'Server settings updated successfully.',
-      data: result.rows[0]
+      data: updated
     });
   } catch (err) {
     console.error('[SERVER CONTROLLER] Error updating server settings:', err);
