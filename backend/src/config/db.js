@@ -64,24 +64,35 @@ function saveData() {
 async function initDB() {
   loadData();
 
-  // Seed initial admin if empty
-  if (!memoryStore.admins || memoryStore.admins.length === 0) {
-    const adminUsername = process.env.ADMIN_USERNAME || 'admin';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'AdminPass123!';
-    const passwordHash = await bcrypt.hash(adminPassword, 10);
+  const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'AdminPass123!';
 
-    memoryStore.admins = [
-      {
-        id: 1,
-        username: adminUsername,
-        password_hash: passwordHash,
-        created_at: new Date().toISOString()
-      }
-    ];
+  if (!memoryStore.admins) memoryStore.admins = [];
+
+  // Remove testadmin artifacts
+  memoryStore.admins = memoryStore.admins.filter(a => a.username !== 'testadmin');
+
+  let admin = memoryStore.admins.find(a => a.username === adminUsername);
+
+  if (!admin) {
+    const passwordHash = await bcrypt.hash(adminPassword, 10);
+    admin = {
+      id: 1,
+      username: adminUsername,
+      password_hash: passwordHash,
+      created_at: new Date().toISOString()
+    };
+    memoryStore.admins.push(admin);
     saveData();
     console.log(`[STORAGE] Administrator account initialized: "${adminUsername}".`);
-  } else {
-    console.log(`[STORAGE] Loaded existing administrator accounts (${memoryStore.admins.length}).`);
+  } else if (process.env.ADMIN_PASSWORD) {
+    // If ADMIN_PASSWORD is set in env, ensure it matches the configured environment password
+    const isMatch = await bcrypt.compare(adminPassword, admin.password_hash);
+    if (!isMatch) {
+      admin.password_hash = await bcrypt.hash(adminPassword, 10);
+      saveData();
+      console.log(`[STORAGE] Synced password for administrator "${adminUsername}" from environment.`);
+    }
   }
 }
 
