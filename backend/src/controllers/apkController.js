@@ -91,9 +91,16 @@ async function publishApk(req, res) {
       });
     }
 
+    let finalUrl = downloadUrl.trim();
+    // Auto-convert Google Drive viewer links to direct download links
+    const gdriveMatch = finalUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (gdriveMatch && gdriveMatch[1]) {
+      finalUrl = `https://drive.google.com/uc?export=download&id=${gdriveMatch[1]}`;
+    }
+
     const updated = updateApk({
       is_published: true,
-      download_url: downloadUrl.trim(),
+      download_url: finalUrl,
       file_name: (fileName || 'Minecraft-Bedrock.apk').trim(),
       file_size_formatted: (fileSizeFormatted || '400 MB').trim(),
       version: version.trim(),
