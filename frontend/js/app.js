@@ -150,39 +150,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (apkVersionEl) apkVersionEl.textContent = `v${apk.version}`;
     if (apkSizeEl) apkSizeEl.textContent = apk.fileSizeFormatted || `${(apk.fileSize / (1024 * 1024)).toFixed(1)} MB`;
-    if (apkShaEl) apkShaEl.textContent = apk.sha256Hash;
     if (apkDescEl) apkDescEl.textContent = apk.description || 'Official community-authorized companion client.';
     if (apkDownloadsEl) apkDownloadsEl.textContent = `${apk.downloadCount} downloads`;
 
+    // Direct 1-click download link
     if (apkDownloadBtn) {
-      apkDownloadBtn.onclick = async (e) => {
-        e.preventDefault();
-        try {
-          apkDownloadBtn.disabled = true;
-          const origText = apkDownloadBtn.innerHTML;
-          apkDownloadBtn.innerHTML = `
-            <svg class="spin-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
-            Generating Secure Link...
-          `;
-
-          const res = await fetch(`${apiBase}/api/apk/download`);
-          const dlResult = await res.json();
-
-          if (dlResult.success && dlResult.downloadUrl) {
-            // Trigger direct download without streaming 400MB through backend
-            window.location.href = dlResult.downloadUrl;
-            showToast('Download started directly from secure cloud storage!');
-          } else {
-            showToast(dlResult.error || 'Failed to generate download URL.', true);
-          }
-
-          apkDownloadBtn.disabled = false;
-          apkDownloadBtn.innerHTML = origText;
-        } catch (err) {
-          showToast('Network error while generating download link.', true);
-          apkDownloadBtn.disabled = false;
-        }
+      apkDownloadBtn.href = `${apiBase}/api/apk/download?redirect=true`;
+      apkDownloadBtn.target = '_blank';
+      apkDownloadBtn.rel = 'noopener noreferrer';
+      apkDownloadBtn.onclick = () => {
+        showToast('Download started directly!');
       };
+    }
+
+    // Optional SHA-256 hash
+    const hashDetails = document.getElementById('apk-hash-details');
+    if (apkShaEl && apk.sha256Hash) {
+      apkShaEl.textContent = apk.sha256Hash;
+      if (hashDetails) hashDetails.style.display = 'block';
+    } else if (hashDetails) {
+      hashDetails.style.display = 'none';
     }
   }
 

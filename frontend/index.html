@@ -252,18 +252,19 @@
             <div>Compatibility: <strong style="color: var(--emerald-light);">Android 8.0+</strong></div>
           </div>
 
-          <!-- SHA-256 File Integrity Checksum -->
-          <div class="apk-hash-box">
-            <span><strong>SHA-256 Checksum:</strong> <code id="apk-sha256">Verifying...</code></span>
-            <button class="btn-copy" id="copy-sha-btn" title="Copy SHA-256 checksum">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              Copy Hash
-            </button>
-          </div>
-
-          <p class="apk-notice">
-            Notice: Only download APK packages that you have permission to install. Always verify the SHA-256 checksum after downloading for complete file integrity.
-          </p>
+          <!-- Optional File Integrity Checksum (Tucked away for advanced players) -->
+          <details class="instructions-details" id="apk-hash-details" style="display: none; padding-top: 0.5rem; border-top: 1px dashed rgba(255,255,255,0.08);">
+            <summary class="instructions-summary" style="font-size: 0.75rem; color: var(--text-dim);">
+              <span>Advanced: Verify File Integrity (SHA-256)</span>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="apk-hash-box" style="margin-top: 0.5rem;">
+              <span><code>SHA-256: </code><code id="apk-sha256">--</code></span>
+              <button class="btn-copy" id="copy-sha-btn" title="Copy SHA-256 checksum">
+                Copy Hash
+              </button>
+            </div>
+          </details>
         </div>
       </div>
     </section>
