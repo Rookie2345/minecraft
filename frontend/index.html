@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minecraft Server Portal | Java & Bedrock Community</title>
+  <meta name="description" content="Official Minecraft Server Community Portal. Connect to our Java and Bedrock cross-play servers, check server status, and access authorized tools.">
+  
+  <!-- Render backend API URL meta placeholder (optional, can be empty or set in production) -->
+  <meta name="portal-api-url" content="">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- Favicon SVG inline -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2310b981'><path d='M4 4h16v16H4z'/></svg>">
+</head>
+<body>
+  <!-- Ambient Minecraft Ember/Particle Canvas -->
+  <canvas id="particle-canvas"></canvas>
+
+  <!-- Navigation Bar -->
+  <header class="portal-nav">
+    <div class="portal-container nav-content">
+      <a href="#" class="nav-brand">
+        <!-- SVG Pickaxe / Block Icon -->
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+        </svg>
+        <span>OURCRAFT<span style="color: var(--emerald-light);">.PORTAL</span></span>
+      </a>
+
+      <div class="nav-actions">
+        <!-- Non-blocking server status pill -->
+        <div class="status-pill" id="api-status-pill" title="Server network connection status">
+          <span class="status-dot warning" id="api-status-dot"></span>
+          <span id="api-status-text">Connecting...</span>
+        </div>
+
+        <a href="admin.html" class="nav-admin-link">Admin Portal</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="portal-container">
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-tag">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        Community Multiplayer Portal
+      </div>
+      <h1 class="hero-title">ENTER THE WORLD</h1>
+      <p class="hero-subtitle">
+        Join our dedicated Minecraft community. Experience seamless survival, cooperative builds, and cross-platform multiplayer across Java and Bedrock editions.
+      </p>
+
+      <div class="hero-buttons">
+        <a href="#java-card" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/></svg>
+          Java Edition
+        </a>
+        <a href="#bedrock-card" class="btn btn-secondary">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          Bedrock Edition
+        </a>
+      </div>
+    </section>
+
+    <!-- Community Announcement Banner (Dynamic from Admin) -->
+    <div class="announcement-banner" id="announcement-banner">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span id="announcement-text">Welcome to our community! Connection details are listed below.</span>
+    </div>
+
+    <!-- Edition Cards Section -->
+    <section class="editions-grid" id="editions">
+      <!-- Java Edition Card -->
+      <article class="edition-card java" id="java-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2">
+              <path d="M4 4h16v16H4z"/>
+              <path d="M9 4v16M15 4v16M4 9h16M4 15h16"/>
+            </svg>
+            <div>
+              <h2 class="card-title">Java Edition</h2>
+              <span class="badge badge-green">PC & Mac</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="meta-list">
+          <div class="meta-item">
+            <span class="meta-label">Supported Game:</span>
+            <span class="meta-val">Minecraft Java Edition</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Recommended Version:</span>
+            <span class="meta-val" id="java-version">26.3</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Launcher Support:</span>
+            <span class="meta-val" id="java-launcher">TLauncher</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Hosting Infrastructure:</span>
+            <span class="meta-val" id="java-hosting">Aternos Cloud</span>
+          </div>
+        </div>
+
+        <!-- Java Server Address & Port Box -->
+        <div class="server-address-box">
+          <div class="box-row">
+            <div>
+              <div class="box-label">Server Address & Port</div>
+              <div class="box-value" id="java-address">Configure in Admin</div>
+            </div>
+            <button class="btn-copy" id="copy-java-btn" title="Copy Java Server Address">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy Address
+            </button>
+          </div>
+          <div class="box-row" style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-dim);">
+            <span>Default Java Port: <strong id="java-port" style="color: var(--text-muted);">25565</strong></span>
+          </div>
+        </div>
+
+        <!-- Connection Instructions Accordion -->
+        <details class="instructions-details" open>
+          <summary class="instructions-summary">
+            <span>How to Connect (Java Guide)</span>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="instructions-content">
+            <ol>
+              <li>Open your Minecraft Java Edition launcher (e.g., TLauncher or Official Launcher).</li>
+              <li>Select version <strong style="color: var(--emerald-light);">26.3</strong> and launch the game.</li>
+              <li>From the main menu, click on <strong>Multiplayer</strong>.</li>
+              <li>Click <strong>Add Server</strong>. Enter a server name (e.g. <em>Our Community Server</em>).</li>
+              <li>Paste the <strong>Server Address</strong> displayed above and click <strong>Done</strong>.</li>
+              <li>Select the server and click <strong>Join Server</strong> to enter!</li>
+            </ol>
+          </div>
+        </details>
+      </article>
+
+      <!-- Bedrock Edition Card -->
+      <article class="edition-card bedrock" id="bedrock-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+              <line x1="12" y1="18" x2="12.01" y2="18"/>
+            </svg>
+            <div>
+              <h2 class="card-title">Bedrock Edition</h2>
+              <span class="badge badge-cyan">Mobile & Console</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="meta-list">
+          <div class="meta-item">
+            <span class="meta-label">Supported Game:</span>
+            <span class="meta-val">Minecraft Bedrock Edition</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Platform Support:</span>
+            <span class="meta-val" id="bedrock-platform">Android & Supported Devices</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Supported Version:</span>
+            <span class="meta-val" id="bedrock-version">Latest Bedrock</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Hosting Infrastructure:</span>
+            <span class="meta-val" id="bedrock-hosting">Aternos Cloud</span>
+          </div>
+        </div>
+
+        <!-- Bedrock Separate Address and Port Box -->
+        <div class="server-address-box">
+          <div class="box-row">
+            <div>
+              <div class="box-label">Server IP / Address</div>
+              <div class="box-value" id="bedrock-address">Configure in Admin</div>
+            </div>
+            <button class="btn-copy" id="copy-bedrock-address-btn" title="Copy Bedrock Server Address">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy IP
+            </button>
+          </div>
+          <div class="box-row" style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed rgba(255, 255, 255, 0.08);">
+            <div>
+              <div class="box-label">Bedrock Port (Required)</div>
+              <div class="box-value" id="bedrock-port" style="color: var(--cyan-primary);">19132</div>
+            </div>
+            <button class="btn-copy" id="copy-bedrock-port-btn" title="Copy Bedrock Port">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy Port
+            </button>
+          </div>
+        </div>
+
+        <!-- Bedrock Connection Instructions Accordion -->
+        <details class="instructions-details" open>
+          <summary class="instructions-summary">
+            <span>How to Connect (Bedrock & Android)</span>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="instructions-content">
+            <ol>
+              <li>Launch <strong>Minecraft Bedrock</strong> on your Android or supported device.</li>
+              <li>Tap the <strong>Play</strong> button on the title screen.</li>
+              <li>Select the <strong>Servers</strong> tab from the top navigation.</li>
+              <li>Scroll down to the bottom of the list and tap <strong>Add Server</strong>.</li>
+              <li>Enter any <strong>Server Name</strong> (e.g. <em>Community Bedrock</em>).</li>
+              <li>Paste the <strong>Server IP / Address</strong> and <strong>Port</strong> shown above separately into the corresponding fields.</li>
+              <li>Tap <strong>Save</strong> or <strong>Play</strong> to connect!</li>
+            </ol>
+          </div>
+        </details>
+      </article>
+    </section>
+
+    <!-- Authorized Android APK Section (Dynamically displayed ONLY when admin has published a verified file) -->
+    <section class="apk-section" id="apk-section">
+      <div class="apk-card">
+        <div class="apk-card-content">
+          <div class="apk-header-flex">
+            <div class="apk-title-group">
+              <h3>
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#10b981" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                Android Companion Application
+              </h3>
+              <p style="color: var(--text-muted); font-size: 0.9rem;" id="apk-description">
+                Authorized community Android package.
+              </p>
+            </div>
+            <div>
+              <a href="#" class="btn btn-primary" id="apk-download-btn">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download APK Package
+              </a>
+            </div>
+          </div>
+
+          <div class="apk-meta-row">
+            <div>Version: <strong id="apk-version">v1.0</strong></div>
+            <div>File Size: <strong id="apk-size">-- MB</strong></div>
+            <div>Stats: <strong id="apk-downloads">0 downloads</strong></div>
+            <div>Compatibility: <strong style="color: var(--emerald-light);">Android 8.0+</strong></div>
+          </div>
+
+          <!-- SHA-256 File Integrity Checksum -->
+          <div class="apk-hash-box">
+            <span><strong>SHA-256 Checksum:</strong> <code id="apk-sha256">Verifying...</code></span>
+            <button class="btn-copy" id="copy-sha-btn" title="Copy SHA-256 checksum">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy Hash
+            </button>
+          </div>
+
+          <p class="apk-notice">
+            Notice: Only download APK packages that you have permission to install. Always verify the SHA-256 checksum after downloading for complete file integrity.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="portal-footer">
+    <div class="portal-container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <h5>OURCRAFT PORTAL</h5>
+          <p style="margin-bottom: 0.75rem;">A modern community gateway for Minecraft Java and Bedrock cross-play servers.</p>
+          <p>Powered by high-performance Cloudflare R2 object storage and Render cloud infrastructure.</p>
+        </div>
+        <div class="footer-col">
+          <h5>QUICK LINKS</h5>
+          <ul class="footer-links">
+            <li><a href="#java-card">Java Edition Info</a></li>
+            <li><a href="#bedrock-card">Bedrock Edition Info</a></li>
+            <li><a href="admin.html">Administrator Dashboard</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>HOSTING DETAILS</h5>
+          <ul class="footer-links">
+            <li>Server Host: Aternos Cloud</li>
+            <li>Location: North America / Europe</li>
+            <li>Cross-Play: Enabled via GeyserMC</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-disclaimer">
+        <p>NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.</p>
+        <p style="margin-top: 0.4rem;">Minecraft is a registered trademark of Mojang Synergies AB. All other trademarks belong to their respective owners.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

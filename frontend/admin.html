@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | Minecraft Server Portal</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2310b981'><path d='M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z'/></svg>">
+</head>
+<body>
+  <div class="portal-container">
+    <!-- Unauthenticated Login View -->
+    <div id="login-section" class="login-wrapper">
+      <div class="login-card">
+        <h2>PORTAL CONTROL</h2>
+        <p class="login-subtitle">Sign in to manage server settings and APK distribution</p>
+
+        <div id="login-error" class="alert-danger" style="display: none;"></div>
+
+        <form id="login-form">
+          <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label for="login-username">Administrator Username</label>
+            <input type="text" id="login-username" class="form-control" required placeholder="admin" autocomplete="username">
+          </div>
+          <div class="form-group" style="margin-bottom: 1.75rem;">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" class="form-control" required placeholder="••••••••••••" autocomplete="current-password">
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">
+            Sign In to Dashboard
+          </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 1.5rem;">
+          <a href="index.html" class="nav-admin-link">← Return to Public Portal</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Authenticated Dashboard View -->
+    <div id="dashboard-section" style="display: none; padding-bottom: 4rem;">
+      <header class="admin-header">
+        <div class="admin-title-wrap">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#10b981" stroke-width="2"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+          <div>
+            <h1 style="font-size: 1.5rem; font-weight: 700; color: #ffffff;">Admin Dashboard</h1>
+            <span class="admin-badge">Logged in as: <strong id="admin-username-display" style="color: #ffffff;">admin</strong></span>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; align-items: center;">
+          <a href="index.html" class="btn btn-glass btn-sm">View Website</a>
+          <button id="logout-btn" class="btn btn-danger btn-sm">Log Out</button>
+        </div>
+      </header>
+
+      <!-- Tabs Navigation -->
+      <nav class="admin-tabs">
+        <button class="admin-tab-btn active" data-tab="server">Server Information</button>
+        <button class="admin-tab-btn" data-tab="apk">APK File Management</button>
+        <button class="admin-tab-btn" data-tab="settings">API & Cloud Settings</button>
+      </nav>
+
+      <!-- TAB 1: Server Settings -->
+      <div id="tab-server" class="tab-pane active">
+        <div class="form-card">
+          <h3 style="margin-bottom: 1.5rem; color: var(--emerald-light);">Server Connection & Version Settings</h3>
+          <form id="server-settings-form">
+            <h4 style="color: #ffffff; margin-bottom: 1rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem;">Java Edition Configuration</h4>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="input-java-address">Java Server Address / IP</label>
+                <input type="text" id="input-java-address" class="form-control" placeholder="e.g. play.ourcraft.aternos.me">
+              </div>
+              <div class="form-group">
+                <label for="input-java-port">Java Port (Default: 25565)</label>
+                <input type="text" id="input-java-port" class="form-control" value="25565">
+              </div>
+              <div class="form-group">
+                <label for="input-java-version">Java Supported Version</label>
+                <input type="text" id="input-java-version" class="form-control" value="26.3">
+              </div>
+              <div class="form-group">
+                <label for="input-java-launcher">Recommended Launcher</label>
+                <input type="text" id="input-java-launcher" class="form-control" value="TLauncher">
+              </div>
+              <div class="form-group">
+                <label for="input-java-hosting">Hosting Service</label>
+                <input type="text" id="input-java-hosting" class="form-control" value="Aternos">
+              </div>
+            </div>
+
+            <h4 style="color: #ffffff; margin: 2rem 0 1rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem;">Bedrock Edition Configuration</h4>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="input-bedrock-address">Bedrock Server Address / IP</label>
+                <input type="text" id="input-bedrock-address" class="form-control" placeholder="e.g. play.ourcraft.aternos.me">
+              </div>
+              <div class="form-group">
+                <label for="input-bedrock-port">Bedrock Port (Default: 19132)</label>
+                <input type="text" id="input-bedrock-port" class="form-control" value="19132">
+              </div>
+              <div class="form-group">
+                <label for="input-bedrock-version">Bedrock Supported Version</label>
+                <input type="text" id="input-bedrock-version" class="form-control" value="Latest Bedrock">
+              </div>
+              <div class="form-group">
+                <label for="input-bedrock-platform">Platform Support</label>
+                <input type="text" id="input-bedrock-platform" class="form-control" value="Android & Bedrock Devices">
+              </div>
+              <div class="form-group">
+                <label for="input-bedrock-hosting">Hosting Service</label>
+                <input type="text" id="input-bedrock-hosting" class="form-control" value="Aternos">
+              </div>
+            </div>
+
+            <h4 style="color: #ffffff; margin: 2rem 0 1rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem;">Community Announcement</h4>
+            <div class="form-group" style="margin-bottom: 2rem;">
+              <label for="input-announcement">Homepage Banner Notice</label>
+              <textarea id="input-announcement" class="form-control" rows="3" placeholder="Enter an optional announcement to display to visitors..."></textarea>
+            </div>
+
+            <button type="submit" id="save-server-settings-btn" class="btn btn-primary">
+              Save Server Settings
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- TAB 2: APK Upload & Management -->
+      <div id="tab-apk" class="tab-pane">
+        <!-- Direct Multipart Upload Form -->
+        <div class="form-card">
+          <h3 style="margin-bottom: 0.5rem; color: var(--emerald-light);">Upload Authorized Android APK</h3>
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">
+            Uploads are streamed directly from your browser to Cloudflare R2 using presigned multipart chunks up to 1 GB. Render backend memory is never overloaded.
+          </p>
+
+          <!-- Upload Progress Card (Hidden until upload begins) -->
+          <div id="upload-progress-card" class="progress-card" style="display: none;">
+            <div class="progress-header">
+              <strong id="upload-status-text" style="color: var(--emerald-light);">Uploading...</strong>
+              <span id="upload-percent-text" style="font-weight: 700; color: #ffffff;">0%</span>
+            </div>
+            <div class="progress-bar-container">
+              <div id="upload-progress-bar" class="progress-bar-fill"></div>
+            </div>
+            <div class="progress-footer">
+              <span id="upload-stats-text">0 MB of 0 MB</span>
+              <button id="cancel-upload-btn" class="btn-danger btn-sm">Cancel Upload</button>
+            </div>
+          </div>
+
+          <form id="apk-upload-form">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="apk-file-input">Select APK Package (.apk only, max 1 GB)</label>
+                <input type="file" id="apk-file-input" class="form-control" accept=".apk" required>
+              </div>
+              <div class="form-group">
+                <label for="apk-version-input">Application Version</label>
+                <input type="text" id="apk-version-input" class="form-control" placeholder="e.g. 1.20.50" required>
+              </div>
+              <div class="form-group full-width">
+                <label for="apk-desc-input">Description / Release Notes</label>
+                <input type="text" id="apk-desc-input" class="form-control" placeholder="e.g. Official community companion package with server quick-connect.">
+              </div>
+            </div>
+
+            <button type="submit" id="start-upload-btn" class="btn btn-primary">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Verify Checksum & Begin Cloud Upload
+            </button>
+          </form>
+        </div>
+
+        <!-- Published & Archived APK Records -->
+        <div class="form-card">
+          <h3 style="margin-bottom: 1rem; color: #ffffff;">Published APK Files</h3>
+          <div id="apk-file-list" class="apk-file-list">
+            <div class="empty-state">Loading APK files...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: API Settings -->
+      <div id="tab-settings" class="tab-pane">
+        <div class="form-card">
+          <h3 style="margin-bottom: 1rem; color: var(--cyan-primary);">Frontend-to-Backend Connection</h3>
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">
+            When deployed to Render, your static site needs to know the URL of your Render Web Service backend (e.g. <code>https://minecraft-portal-api.onrender.com</code>).
+          </p>
+
+          <div class="form-group" style="margin-bottom: 1.5rem; max-width: 500px;">
+            <label for="custom-api-url-input">Backend Web Service URL</label>
+            <input type="url" id="custom-api-url-input" class="form-control" placeholder="http://localhost:4000">
+            <small style="color: var(--text-dim); margin-top: 0.25rem;">Leave empty for relative /api (local dev or reverse proxy).</small>
+          </div>
+
+          <button id="save-api-url-btn" class="btn btn-secondary">
+            Save API Connection URL
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
