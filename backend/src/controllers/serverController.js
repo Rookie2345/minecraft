@@ -34,6 +34,7 @@ async function getServerInfo(req, res) {
           instructions: 'Launch Minecraft Bedrock on your Android or supported device. Tap Play -> Servers tab -> Scroll down and tap Add Server. Enter the Server Name, paste the Server Address and Port separately, then tap Save and Join.'
         },
         announcement: settings.announcement,
+        discord_url: settings.discord_url || '',
         updatedAt: settings.updated_at
       }
     });
@@ -59,7 +60,8 @@ async function updateServerSettings(req, res) {
       bedrock_version,
       bedrock_platform,
       bedrock_hosting,
-      announcement
+      announcement,
+      discord_url
     } = req.body;
 
     const updated = updateSettings({
@@ -73,7 +75,8 @@ async function updateServerSettings(req, res) {
       bedrock_version: (bedrock_version || 'Latest Bedrock').trim(),
       bedrock_platform: (bedrock_platform || 'Android & Bedrock Devices').trim(),
       bedrock_hosting: (bedrock_hosting || 'Aternos').trim(),
-      announcement: (announcement || '').trim()
+      announcement: (announcement || '').trim(),
+      discord_url: (discord_url || '').trim()
     });
 
     return res.json({

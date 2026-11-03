@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const bedrockPlatformInput = document.getElementById('input-bedrock-platform');
   const bedrockHostingInput = document.getElementById('input-bedrock-hosting');
   const announcementInput = document.getElementById('input-announcement');
+  const discordUrlInput = document.getElementById('input-discord-url');
   const serverSettingsSaveBtn = document.getElementById('save-server-settings-btn');
 
   // DOM Elements - APK Publishing
@@ -351,6 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (bedrockHostingInput) bedrockHostingInput.value = s.bedrock?.hosting || 'Aternos';
 
         if (announcementInput) announcementInput.value = s.announcement || '';
+        if (discordUrlInput) discordUrlInput.value = s.discord_url || '';
       }
     } catch (err) {
       console.error('Error loading server settings:', err);
@@ -373,7 +375,8 @@ document.addEventListener('DOMContentLoaded', () => {
         bedrock_version: bedrockVersionInput.value.trim(),
         bedrock_platform: bedrockPlatformInput.value.trim(),
         bedrock_hosting: bedrockHostingInput.value.trim(),
-        announcement: announcementInput.value.trim()
+        announcement: announcementInput.value.trim(),
+        discord_url: discordUrlInput ? discordUrlInput.value.trim() : ''
       };
 
       try {

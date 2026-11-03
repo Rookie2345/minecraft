@@ -124,6 +124,17 @@ document.addEventListener('DOMContentLoaded', () => {
       announcementText.textContent = data.announcement;
       announcementBanner.style.display = 'flex';
     }
+
+    // Show/hide Discord button based on configured URL
+    const discordBtn = document.getElementById('discord-hero-btn');
+    if (discordBtn) {
+      if (data.discord_url && data.discord_url.trim()) {
+        discordBtn.href = data.discord_url.trim();
+        discordBtn.style.display = 'inline-flex';
+      } else {
+        discordBtn.style.display = 'none';
+      }
+    }
   }
 
   async function fetchApkData() {

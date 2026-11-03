@@ -19,6 +19,7 @@ const defaultData = {
     bedrock_platform: 'Android & Bedrock Devices',
     bedrock_hosting: 'Aternos',
     announcement: 'Welcome to our Minecraft Community Server! Configure connection details in the Admin Panel.',
+    discord_url: '',
     updated_at: new Date().toISOString()
   },
   apk: {
@@ -65,6 +66,39 @@ function saveData() {
 async function initDB() {
   loadData();
 
+  // ── Seed server settings from env vars ──────────────────────────────────────
+  // These env vars act as persistent defaults that survive Render restarts.
+  // The admin can still override them via the admin panel (they'll be in-memory
+  // until the next restart, at which point env vars restore).
+  const envSettings = {};
+  if (process.env.DEFAULT_JAVA_ADDRESS)    envSettings.java_address    = process.env.DEFAULT_JAVA_ADDRESS;
+  if (process.env.DEFAULT_JAVA_PORT)       envSettings.java_port       = process.env.DEFAULT_JAVA_PORT;
+  if (process.env.DEFAULT_JAVA_VERSION)    envSettings.java_version    = process.env.DEFAULT_JAVA_VERSION;
+  if (process.env.DEFAULT_JAVA_LAUNCHER)   envSettings.java_launcher   = process.env.DEFAULT_JAVA_LAUNCHER;
+  if (process.env.DEFAULT_BEDROCK_ADDRESS) envSettings.bedrock_address = process.env.DEFAULT_BEDROCK_ADDRESS;
+  if (process.env.DEFAULT_BEDROCK_PORT)    envSettings.bedrock_port    = process.env.DEFAULT_BEDROCK_PORT;
+  if (process.env.DEFAULT_ANNOUNCEMENT)    envSettings.announcement    = process.env.DEFAULT_ANNOUNCEMENT;
+  if (process.env.DEFAULT_DISCORD_URL)     envSettings.discord_url     = process.env.DEFAULT_DISCORD_URL;
+
+  if (Object.keys(envSettings).length > 0) {
+    memoryStore.server_settings = { ...memoryStore.server_settings, ...envSettings };
+    console.log('[STORAGE] Server settings seeded from environment variables.');
+  }
+
+  // ── Seed APK config from env vars ───────────────────────────────────────────
+  if (process.env.DEFAULT_APK_URL) {
+    memoryStore.apk = {
+      ...memoryStore.apk,
+      download_url:        process.env.DEFAULT_APK_URL,
+      version:             process.env.DEFAULT_APK_VERSION    || memoryStore.apk.version,
+      file_size_formatted: process.env.DEFAULT_APK_SIZE       || memoryStore.apk.file_size_formatted,
+      file_name:           process.env.DEFAULT_APK_NAME       || memoryStore.apk.file_name,
+      is_published:        true
+    };
+    console.log('[STORAGE] APK config seeded from environment variables (auto-published).');
+  }
+
+  // ── Initialize admin account ─────────────────────────────────────────────────
   const adminUsername = process.env.ADMIN_USERNAME || 'admin';
   const adminPassword = process.env.ADMIN_PASSWORD || 'AdminPass123!';
 
