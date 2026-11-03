@@ -353,6 +353,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (announcementInput) announcementInput.value = s.announcement || '';
         if (discordUrlInput) discordUrlInput.value = s.discord_url || '';
+
+        // Storage status indicator
+        const storageBadge = document.getElementById('storage-status-badge');
+        const storageCard = document.getElementById('storage-warning-card');
+        if (s.storage) {
+          if (s.storage.isPersistent) {
+            if (storageBadge) {
+              storageBadge.textContent = 'Storage: Database Connected ✓';
+              storageBadge.style.background = 'rgba(16, 185, 129, 0.15)';
+              storageBadge.style.color = '#10b981';
+              storageBadge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+            }
+            if (storageCard) storageCard.style.display = 'none';
+          } else {
+            if (storageBadge) {
+              storageBadge.textContent = 'Storage: Temporary (No Database)';
+              storageBadge.style.background = 'rgba(234, 179, 8, 0.15)';
+              storageBadge.style.color = '#facc15';
+              storageBadge.style.borderColor = 'rgba(234, 179, 8, 0.3)';
+            }
+            if (storageCard) storageCard.style.display = 'block';
+          }
+        }
       }
     } catch (err) {
       console.error('Error loading server settings:', err);

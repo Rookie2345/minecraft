@@ -1,5 +1,12 @@
 {
-  "admins": [],
+  "admins": [
+    {
+      "id": 1,
+      "username": "admin",
+      "password_hash": "$2a$10$UKNCI.roXikxt5JnXoLf8.nJwc9aapu6KBIxl2qvcNC5KMESYnyCK",
+      "created_at": "2026-11-03T15:20:11.264Z"
+    }
+  ],
   "server_settings": {
     "java_address": "",
     "java_port": "25565",
@@ -12,6 +19,7 @@
     "bedrock_platform": "Android & Bedrock Devices",
     "bedrock_hosting": "Aternos",
     "announcement": "Welcome to our Minecraft Community Server! Connection details are configured in the Admin Panel.",
+    "discord_url": "",
     "updated_at": "2026-11-03T12:00:00.000Z"
   },
   "apk": {
@@ -24,5 +32,6 @@
     "description": "Official community companion application with one-click server connection.",
     "download_count": 0,
     "updated_at": "2026-11-03T12:00:00.000Z"
-  }
+  },
+  "access_requests": []
 }

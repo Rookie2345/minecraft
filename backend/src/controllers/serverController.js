@@ -4,7 +4,8 @@ const {
   getAccessRequests,
   addAccessRequest,
   updateAccessRequestStatus,
-  deleteAccessRequest
+  deleteAccessRequest,
+  getStorageInfo
 } = require('../config/db');
 
 async function getServerInfo(req, res) {
@@ -35,6 +36,7 @@ async function getServerInfo(req, res) {
         },
         announcement: settings.announcement,
         discord_url: settings.discord_url || '',
+        storage: getStorageInfo(),
         updatedAt: settings.updated_at
       }
     });

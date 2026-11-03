@@ -1,8 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
+const { Pool } = require('pg');
 
 const DATA_FILE = path.join(__dirname, '..', '..', 'data', 'portal-data.json');
+
+let pgPool = null;
+let isUsingPostgres = false;
 
 // Default initial state
 const defaultData = {
@@ -38,11 +42,19 @@ const defaultData = {
 
 let memoryStore = { ...defaultData };
 
-function loadData() {
+function loadDataFromFile() {
   try {
     if (fs.existsSync(DATA_FILE)) {
       const raw = fs.readFileSync(DATA_FILE, 'utf8');
-      memoryStore = JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      memoryStore = {
+        ...defaultData,
+        ...parsed,
+        server_settings: { ...defaultData.server_settings, ...(parsed.server_settings || {}) },
+        apk: { ...defaultData.apk, ...(parsed.apk || {}) },
+        admins: parsed.admins || [],
+        access_requests: parsed.access_requests || []
+      };
     } else {
       saveData();
     }
@@ -52,6 +64,7 @@ function loadData() {
 }
 
 function saveData() {
+  // 1. Local file cache
   try {
     const dir = path.dirname(DATA_FILE);
     if (!fs.existsSync(dir)) {
@@ -59,52 +72,132 @@ function saveData() {
     }
     fs.writeFileSync(DATA_FILE, JSON.stringify(memoryStore, null, 2), 'utf8');
   } catch (err) {
-    console.error('[STORAGE] Error writing data file:', err.message);
+    console.error('[STORAGE] Error writing local data file:', err.message);
+  }
+
+  // 2. PostgreSQL persistence if connected
+  if (isUsingPostgres && pgPool) {
+    pgPool.query(
+      `INSERT INTO portal_store (key, data, updated_at) VALUES ('portal_state', $1, NOW())
+       ON CONFLICT (key) DO UPDATE SET data = $1, updated_at = NOW()`,
+      [JSON.stringify(memoryStore)]
+    ).catch(err => {
+      console.error('[STORAGE ERROR] Failed to persist data to PostgreSQL:', err.message);
+    });
   }
 }
 
 async function initDB() {
-  loadData();
+  // 1. First load local file cache if it exists
+  loadDataFromFile();
 
-  // ── Seed server settings from env vars ──────────────────────────────────────
-  // These env vars act as persistent defaults that survive Render restarts.
-  // The admin can still override them via the admin panel (they'll be in-memory
-  // until the next restart, at which point env vars restore).
-  const envSettings = {};
-  if (process.env.DEFAULT_JAVA_ADDRESS)    envSettings.java_address    = process.env.DEFAULT_JAVA_ADDRESS;
-  if (process.env.DEFAULT_JAVA_PORT)       envSettings.java_port       = process.env.DEFAULT_JAVA_PORT;
-  if (process.env.DEFAULT_JAVA_VERSION)    envSettings.java_version    = process.env.DEFAULT_JAVA_VERSION;
-  if (process.env.DEFAULT_JAVA_LAUNCHER)   envSettings.java_launcher   = process.env.DEFAULT_JAVA_LAUNCHER;
-  if (process.env.DEFAULT_BEDROCK_ADDRESS) envSettings.bedrock_address = process.env.DEFAULT_BEDROCK_ADDRESS;
-  if (process.env.DEFAULT_BEDROCK_PORT)    envSettings.bedrock_port    = process.env.DEFAULT_BEDROCK_PORT;
-  if (process.env.DEFAULT_ANNOUNCEMENT)    envSettings.announcement    = process.env.DEFAULT_ANNOUNCEMENT;
-  if (process.env.DEFAULT_DISCORD_URL)     envSettings.discord_url     = process.env.DEFAULT_DISCORD_URL;
+  // 2. Try connecting to PostgreSQL if DATABASE_URL is configured
+  const dbUrl = process.env.DATABASE_URL;
+  if (dbUrl && dbUrl.trim().length > 0) {
+    try {
+      console.log('[STORAGE] Connecting to PostgreSQL database...');
+      pgPool = new Pool({
+        connectionString: dbUrl.trim(),
+        ssl: dbUrl.includes('localhost') ? false : { rejectUnauthorized: false },
+        connectionTimeoutMillis: 10000
+      });
 
-  if (Object.keys(envSettings).length > 0) {
-    memoryStore.server_settings = { ...memoryStore.server_settings, ...envSettings };
-    console.log('[STORAGE] Server settings seeded from environment variables.');
+      const client = await pgPool.connect();
+      try {
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS portal_store (
+            key VARCHAR(64) PRIMARY KEY,
+            data JSONB NOT NULL,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
+        `);
+
+        const res = await client.query(`SELECT data FROM portal_store WHERE key = 'portal_state'`);
+        if (res.rows.length > 0 && res.rows[0].data) {
+          const dbData = res.rows[0].data;
+          memoryStore = {
+            ...defaultData,
+            ...dbData,
+            server_settings: {
+              ...defaultData.server_settings,
+              ...(dbData.server_settings || {})
+            },
+            apk: {
+              ...defaultData.apk,
+              ...(dbData.apk || {})
+            },
+            admins: dbData.admins || [],
+            access_requests: dbData.access_requests || []
+          };
+          console.log('[STORAGE] [OK] Successfully restored portal state from PostgreSQL database!');
+        } else {
+          await client.query(
+            `INSERT INTO portal_store (key, data, updated_at) VALUES ('portal_state', $1, NOW())
+             ON CONFLICT (key) DO UPDATE SET data = $1, updated_at = NOW()`,
+            [JSON.stringify(memoryStore)]
+          );
+          console.log('[STORAGE] [OK] Initialized portal state in PostgreSQL database.');
+        }
+        isUsingPostgres = true;
+      } finally {
+        client.release();
+      }
+    } catch (err) {
+      console.error('[STORAGE WARNING] PostgreSQL connection failed:', err.message);
+      console.warn('[STORAGE WARNING] Running in local file mode. Note: on free hosts like Render, local files do not persist across restarts.');
+      isUsingPostgres = false;
+    }
+  } else {
+    console.log('[STORAGE] No DATABASE_URL set. Running in local file mode.');
+    console.warn('[STORAGE] Note: on Render free tier, set DATABASE_URL (e.g. from Neon.tech) to persist changes across restarts.');
   }
 
-  // ── Seed APK config from env vars ───────────────────────────────────────────
-  if (process.env.DEFAULT_APK_URL) {
+  // 3. NON-DESTRUCTIVE Seed from env vars ONLY if values are currently empty!
+  // This guarantees that any changes made by the admin in the Admin Panel
+  // are NEVER overwritten by old environment variables on restart!
+  let shouldSave = false;
+
+  if (!memoryStore.server_settings.java_address && process.env.DEFAULT_JAVA_ADDRESS) {
+    memoryStore.server_settings.java_address = process.env.DEFAULT_JAVA_ADDRESS;
+    shouldSave = true;
+  }
+  if (!memoryStore.server_settings.java_port && process.env.DEFAULT_JAVA_PORT) {
+    memoryStore.server_settings.java_port = process.env.DEFAULT_JAVA_PORT;
+    shouldSave = true;
+  }
+  if (!memoryStore.server_settings.bedrock_address && process.env.DEFAULT_BEDROCK_ADDRESS) {
+    memoryStore.server_settings.bedrock_address = process.env.DEFAULT_BEDROCK_ADDRESS;
+    shouldSave = true;
+  }
+  if (!memoryStore.server_settings.bedrock_port && process.env.DEFAULT_BEDROCK_PORT) {
+    memoryStore.server_settings.bedrock_port = process.env.DEFAULT_BEDROCK_PORT;
+    shouldSave = true;
+  }
+  if (!memoryStore.server_settings.discord_url && process.env.DEFAULT_DISCORD_URL) {
+    memoryStore.server_settings.discord_url = process.env.DEFAULT_DISCORD_URL;
+    shouldSave = true;
+  }
+  if (!memoryStore.server_settings.announcement && process.env.DEFAULT_ANNOUNCEMENT) {
+    memoryStore.server_settings.announcement = process.env.DEFAULT_ANNOUNCEMENT;
+    shouldSave = true;
+  }
+  if (!memoryStore.apk.download_url && process.env.DEFAULT_APK_URL) {
     memoryStore.apk = {
       ...memoryStore.apk,
-      download_url:        process.env.DEFAULT_APK_URL,
-      version:             process.env.DEFAULT_APK_VERSION    || memoryStore.apk.version,
-      file_size_formatted: process.env.DEFAULT_APK_SIZE       || memoryStore.apk.file_size_formatted,
-      file_name:           process.env.DEFAULT_APK_NAME       || memoryStore.apk.file_name,
-      is_published:        true
+      download_url: process.env.DEFAULT_APK_URL,
+      version: process.env.DEFAULT_APK_VERSION || memoryStore.apk.version,
+      file_size_formatted: process.env.DEFAULT_APK_SIZE || memoryStore.apk.file_size_formatted,
+      file_name: process.env.DEFAULT_APK_NAME || memoryStore.apk.file_name,
+      is_published: true
     };
-    console.log('[STORAGE] APK config seeded from environment variables (auto-published).');
+    shouldSave = true;
   }
 
-  // ── Initialize admin account ─────────────────────────────────────────────────
+  // 4. Initialize administrator account
   const adminUsername = process.env.ADMIN_USERNAME || 'admin';
   const adminPassword = process.env.ADMIN_PASSWORD || 'AdminPass123!';
 
   if (!memoryStore.admins) memoryStore.admins = [];
-
-  // Remove testadmin artifacts
   memoryStore.admins = memoryStore.admins.filter(a => a.username !== 'testadmin');
 
   let admin = memoryStore.admins.find(a => a.username === adminUsername);
@@ -118,16 +211,19 @@ async function initDB() {
       created_at: new Date().toISOString()
     };
     memoryStore.admins.push(admin);
-    saveData();
+    shouldSave = true;
     console.log(`[STORAGE] Administrator account initialized: "${adminUsername}".`);
   } else if (process.env.ADMIN_PASSWORD) {
-    // If ADMIN_PASSWORD is set in env, ensure it matches the configured environment password
     const isMatch = await bcrypt.compare(adminPassword, admin.password_hash);
     if (!isMatch) {
       admin.password_hash = await bcrypt.hash(adminPassword, 10);
-      saveData();
+      shouldSave = true;
       console.log(`[STORAGE] Synced password for administrator "${adminUsername}" from environment.`);
     }
+  }
+
+  if (shouldSave) {
+    saveData();
   }
 }
 
@@ -229,6 +325,16 @@ function deleteAccessRequest(id) {
   return false;
 }
 
+function getStorageInfo() {
+  return {
+    isPersistent: isUsingPostgres,
+    type: isUsingPostgres ? 'postgresql' : 'ephemeral_file',
+    message: isUsingPostgres
+      ? 'Persistent Database Connected (Changes saved permanently)'
+      : 'Temporary File Storage (Resets when server restarts — add DATABASE_URL to save permanently)'
+  };
+}
+
 module.exports = {
   initDB,
   getSettings,
@@ -242,5 +348,6 @@ module.exports = {
   getAccessRequests,
   addAccessRequest,
   updateAccessRequestStatus,
-  deleteAccessRequest
+  deleteAccessRequest,
+  getStorageInfo
 };
