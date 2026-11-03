@@ -50,7 +50,15 @@ body {
   position: relative;
   min-height: 100vh;
   overflow-x: hidden;
-  background: radial-gradient(circle at 50% 0%, #13241b 0%, #070a08 75%);
+  background-color: var(--bg-darkest);
+  background-image: 
+    radial-gradient(circle at 50% 15%, rgba(19, 36, 27, 0.72) 0%, rgba(7, 10, 8, 0.94) 85%),
+    linear-gradient(180deg, rgba(7, 10, 8, 0.55) 0%, rgba(7, 10, 8, 0.98) 100%),
+    url('../assets/bg-minecraft-hd.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 #particle-canvas {
@@ -323,7 +331,7 @@ body {
    ========================================================================== */
 .editions-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 2rem;
   margin-bottom: 3.5rem;
 }
@@ -478,6 +486,8 @@ body {
   font-size: 1rem;
   font-weight: 700;
   color: var(--emerald-light);
+  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
 .edition-card.bedrock .box-value {
@@ -711,25 +721,136 @@ body {
 }
 
 /* ==========================================================================
-   RESPONSIVE
+   COMPREHENSIVE MOBILE RESPONSIVE STYLES
    ========================================================================== */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
+  .portal-container {
+    padding: 0 1rem;
+  }
+
+  .portal-nav {
+    padding: 0.75rem 0;
+  }
+
+  .nav-content {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .nav-brand {
+    font-size: 1.1rem;
+  }
+
+  .status-pill {
+    padding: 0.3rem 0.65rem;
+    font-size: 0.75rem;
+  }
+
   .hero-section {
     padding: 3rem 0.5rem 2rem;
   }
-  
+
+  .hero-title {
+    font-size: clamp(2rem, 7.5vw, 3rem);
+    letter-spacing: 0.5px;
+  }
+
+  .hero-subtitle {
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+  }
+
   .hero-buttons {
     flex-direction: column;
     width: 100%;
+    gap: 0.75rem;
   }
-  
+
   .hero-buttons .btn {
     width: 100%;
+    min-height: 48px;
   }
-  
+
+  .editions-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .edition-card {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .card-title {
+    font-size: 1.2rem;
+  }
+
   .box-row {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .btn-copy {
+    width: 100%;
+    justify-content: center;
+    min-height: 42px;
+  }
+
+  .apk-card {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .apk-title-group h3 {
+    font-size: 1.3rem;
+  }
+
+  .apk-header-flex {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .apk-header-flex .btn {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .apk-hash-box {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .apk-hash-box .btn-copy {
+    width: 100%;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .nav-brand span {
+    font-size: 0.95rem;
+  }
+  
+  .status-pill span:not(.status-dot) {
+    max-width: 100px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .hero-title {
+    font-size: 1.95rem;
+  }
+
+  .edition-card {
+    padding: 1.25rem 1rem;
+  }
+
+  .server-address-box {
+    padding: 0.85rem;
   }
 }
