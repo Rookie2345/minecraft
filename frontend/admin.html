@@ -59,25 +59,6 @@
         </div>
       </header>
 
-      <!-- Storage Persistent/Ephemeral Notice Card -->
-      <div id="storage-warning-card" style="display: none; background: rgba(234, 179, 8, 0.08); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem;">
-        <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
-          <span style="font-size: 1.25rem;">⚠️</span>
-          <div style="font-size: 0.85rem; color: #f3f4f6; line-height: 1.5;">
-            <strong style="color: #facc15;">Temporary Storage Notice:</strong> Uploads and settings are currently stored in temporary memory because <code>DATABASE_URL</code> is not set in Render.
-            <br>When Render restarts or sleeps, temporary data resets.
-            <div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(234, 179, 8, 0.2);">
-              <strong>How to make uploads permanent in 1 minute (100% Free):</strong>
-              <ol style="margin: 0.25rem 0 0 1.25rem; padding: 0;">
-                <li>Create a free database on <a href="https://neon.tech" target="_blank" rel="noopener noreferrer" style="color: #22d3ee; text-decoration: underline;">Neon.tech</a> (100% free forever, no credit card).</li>
-                <li>Copy your connection string (<code>postgresql://...</code>).</li>
-                <li>In Render Dashboard &rarr; backend service &rarr; <strong>Environment</strong> &rarr; Add <code>DATABASE_URL</code> and paste it.</li>
-              </ol>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- Tabs Navigation -->
       <nav class="admin-tabs">
         <button class="admin-tab-btn active" data-tab="server">Server Information</button>

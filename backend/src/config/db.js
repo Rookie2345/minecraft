@@ -91,8 +91,12 @@ async function initDB() {
   // 1. First load local file cache if it exists
   loadDataFromFile();
 
-  // 2. Try connecting to PostgreSQL if DATABASE_URL is configured
-  const dbUrl = process.env.DATABASE_URL;
+  // 2. Try connecting to PostgreSQL (uses process.env.DATABASE_URL or verified Neon database)
+  const defaultNeonUrl = 'postgresql://neondb_owner:npg_GpxPFJCb97Nu@ep-odd-feather-a1b6bdro-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require';
+  const dbUrl = (process.env.DATABASE_URL && process.env.DATABASE_URL.trim().length > 0)
+    ? process.env.DATABASE_URL.trim()
+    : defaultNeonUrl;
+
   if (dbUrl && dbUrl.trim().length > 0) {
     try {
       console.log('[STORAGE] Connecting to PostgreSQL database...');
