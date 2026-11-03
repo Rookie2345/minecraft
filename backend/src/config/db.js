@@ -31,7 +31,8 @@ const defaultData = {
     description: 'Official community companion application with one-click server connection.',
     download_count: 0,
     updated_at: new Date().toISOString()
-  }
+  },
+  access_requests: []
 };
 
 let memoryStore = { ...defaultData };
@@ -151,6 +152,49 @@ function incrementApkDownloads() {
   return 0;
 }
 
+function getAccessRequests() {
+  if (!memoryStore.access_requests) memoryStore.access_requests = [];
+  return memoryStore.access_requests;
+}
+
+function addAccessRequest(data) {
+  if (!memoryStore.access_requests) memoryStore.access_requests = [];
+  const newReq = {
+    id: Date.now() + Math.floor(Math.random() * 1000),
+    aternos_username: data.aternos_username,
+    minecraft_ign: data.minecraft_ign || '',
+    note: data.note || '',
+    status: 'pending', // 'pending' | 'granted'
+    created_at: new Date().toISOString()
+  };
+  memoryStore.access_requests.unshift(newReq);
+  saveData();
+  return newReq;
+}
+
+function updateAccessRequestStatus(id, status) {
+  if (!memoryStore.access_requests) return null;
+  const req = memoryStore.access_requests.find(r => r.id === Number(id));
+  if (req) {
+    req.status = status;
+    req.updated_at = new Date().toISOString();
+    saveData();
+    return req;
+  }
+  return null;
+}
+
+function deleteAccessRequest(id) {
+  if (!memoryStore.access_requests) return false;
+  const idx = memoryStore.access_requests.findIndex(r => r.id === Number(id));
+  if (idx !== -1) {
+    memoryStore.access_requests.splice(idx, 1);
+    saveData();
+    return true;
+  }
+  return false;
+}
+
 module.exports = {
   initDB,
   getSettings,
@@ -160,5 +204,9 @@ module.exports = {
   updateAdminPassword,
   getApk,
   updateApk,
-  incrementApkDownloads
+  incrementApkDownloads,
+  getAccessRequests,
+  addAccessRequest,
+  updateAccessRequestStatus,
+  deleteAccessRequest
 };

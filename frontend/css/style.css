@@ -50,10 +50,9 @@ body {
   position: relative;
   min-height: 100vh;
   overflow-x: hidden;
-  background-color: var(--bg-darkest);
+  background-color: #070a08;
   background-image: 
-    radial-gradient(circle at 50% 15%, rgba(19, 36, 27, 0.72) 0%, rgba(7, 10, 8, 0.94) 85%),
-    linear-gradient(180deg, rgba(7, 10, 8, 0.55) 0%, rgba(7, 10, 8, 0.98) 100%),
+    linear-gradient(180deg, rgba(7, 10, 8, 0.25) 0%, rgba(7, 10, 8, 0.65) 100%),
     url('../assets/bg-minecraft-hd.jpg');
   background-size: cover;
   background-position: center top;

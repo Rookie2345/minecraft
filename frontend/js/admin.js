@@ -164,8 +164,172 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.classList.add('active');
         const activePane = document.getElementById(`tab-${tabTarget}`);
         if (activePane) activePane.classList.add('active');
+
+        // Auto-load access requests when switching to that tab
+        if (tabTarget === 'requests') loadAccessRequests();
       });
     });
+  }
+
+  // Refresh button
+  document.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'refresh-requests-btn') {
+      loadAccessRequests();
+    }
+  });
+
+  async function loadAccessRequests() {
+    const token = getToken();
+    const listEl = document.getElementById('requests-list');
+    const emptyEl = document.getElementById('requests-empty');
+    const loadingEl = document.getElementById('requests-loading');
+    if (!listEl) return;
+
+    if (loadingEl) { loadingEl.style.display = 'block'; }
+    if (emptyEl) { emptyEl.style.display = 'none'; }
+    listEl.innerHTML = '';
+
+    try {
+      const res = await fetch(`${apiBase}/api/server/access-requests`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (loadingEl) loadingEl.style.display = 'none';
+
+      if (res.ok && data.success && Array.isArray(data.requests)) {
+        if (data.requests.length === 0) {
+          if (emptyEl) emptyEl.style.display = 'block';
+        } else {
+          renderAccessRequests(data.requests, listEl);
+        }
+      } else {
+        listEl.innerHTML = `<p style="color:#ef4444; text-align:center;">Failed to load requests: ${data.error || 'Unknown error'}</p>`;
+      }
+    } catch (err) {
+      if (loadingEl) loadingEl.style.display = 'none';
+      listEl.innerHTML = `<p style="color:#ef4444; text-align:center;">Network error while loading requests.</p>`;
+    }
+  }
+
+  function renderAccessRequests(requests, container) {
+    container.innerHTML = '';
+    requests.forEach(req => {
+      const isGranted = req.status === 'granted';
+      const card = document.createElement('div');
+      card.style.cssText = `
+        background: rgba(7, 10, 8, 0.55);
+        border: 1px solid ${isGranted ? 'rgba(16,185,129,0.35)' : 'rgba(34,211,238,0.25)'};
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      `;
+
+      const submittedAt = req.submitted_at
+        ? new Date(req.submitted_at).toLocaleString()
+        : 'Unknown time';
+
+      card.innerHTML = `
+        <div style="flex: 1; min-width: 200px;">
+          <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem;">
+            <span style="font-size: 1.1rem;">👤</span>
+            <strong style="color: #ffffff; font-size: 1rem;">${escapeHtml(req.aternos_username)}</strong>
+            <span style="
+              font-size: 0.7rem;
+              font-weight: 700;
+              padding: 2px 8px;
+              border-radius: 999px;
+              background: ${isGranted ? 'rgba(16,185,129,0.2)' : 'rgba(250,204,21,0.15)'};
+              color: ${isGranted ? '#10b981' : '#facc15'};
+              border: 1px solid ${isGranted ? 'rgba(16,185,129,0.4)' : 'rgba(250,204,21,0.3)'};
+              text-transform: uppercase;
+              letter-spacing: 0.05em;
+            ">${isGranted ? '✓ Granted' : '⏳ Pending'}</span>
+          </div>
+          <div style="color: var(--text-muted); font-size: 0.78rem;">
+            Submitted: ${escapeHtml(submittedAt)}
+            ${req.note ? `&nbsp;·&nbsp; Note: ${escapeHtml(req.note)}` : ''}
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
+          ${!isGranted ? `<button class="btn btn-primary btn-sm grant-btn" data-id="${req.id}" style="font-size: 0.78rem; padding: 0.35rem 0.8rem;">✓ Grant</button>` : ''}
+          <button class="btn btn-danger btn-sm delete-btn" data-id="${req.id}" style="font-size: 0.78rem; padding: 0.35rem 0.8rem;">✕ Delete</button>
+        </div>
+      `;
+
+      container.appendChild(card);
+    });
+
+    // Wire buttons
+    container.querySelectorAll('.grant-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-id');
+        await updateRequestStatus(id, 'granted');
+      });
+    });
+
+    container.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-id');
+        if (!confirm('Delete this access request?')) return;
+        await deleteRequest(id);
+      });
+    });
+  }
+
+  async function updateRequestStatus(id, status) {
+    const token = getToken();
+    try {
+      const res = await fetch(`${apiBase}/api/server/access-request/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast('Request marked as granted!');
+        loadAccessRequests();
+      } else {
+        showToast(data.error || 'Failed to update.', true);
+      }
+    } catch (err) {
+      showToast('Network error.', true);
+    }
+  }
+
+  async function deleteRequest(id) {
+    const token = getToken();
+    try {
+      const res = await fetch(`${apiBase}/api/server/access-request/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast('Request deleted.');
+        loadAccessRequests();
+      } else {
+        showToast(data.error || 'Failed to delete.', true);
+      }
+    } catch (err) {
+      showToast('Network error.', true);
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
   async function loadServerSettings() {

@@ -61,6 +61,7 @@
         <button class="admin-tab-btn active" data-tab="server">Server Information</button>
         <button class="admin-tab-btn" data-tab="apk">APK Distribution</button>
         <button class="admin-tab-btn" data-tab="settings">API Settings</button>
+        <button class="admin-tab-btn" data-tab="requests">Access Requests</button>
       </nav>
 
       <!-- TAB 1: Server Settings -->
@@ -211,6 +212,32 @@
           <button id="save-api-url-btn" class="btn btn-secondary">
             Save API Connection URL
           </button>
+        </div>
+      </div>
+
+      <!-- TAB 4: Aternos Server Access Requests -->
+      <div id="tab-requests" class="tab-pane">
+        <div class="form-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h3 style="margin-bottom: 0.25rem; color: #22d3ee;">Server Access Requests</h3>
+              <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">
+                Players who want to start the Aternos server — submitted their username via the homepage form.
+              </p>
+            </div>
+            <button id="refresh-requests-btn" class="btn btn-glass btn-sm">↻ Refresh</button>
+          </div>
+
+          <div id="requests-loading" style="text-align: center; color: var(--text-muted); padding: 2rem; display: none;">
+            Loading requests...
+          </div>
+
+          <div id="requests-empty" style="text-align: center; padding: 3rem 1rem; display: none;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">📭</div>
+            <p style="color: var(--text-muted);">No access requests yet. Players can submit via the homepage.</p>
+          </div>
+
+          <div id="requests-list" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
         </div>
       </div>
     </div>

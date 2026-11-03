@@ -255,22 +255,84 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 2000);
   }
 
-  function showToast(message, isError = false) {
-    const existing = document.querySelector('.portal-toast');
-    if (existing) existing.remove();
+  function setupAccessRequestForm() {
+    const form = document.getElementById('access-request-form');
+    const userInput = document.getElementById('req-aternos-user');
+    const ignInput = document.getElementById('req-mc-ign');
+    const submitBtn = document.getElementById('submit-access-btn');
+    const feedback = document.getElementById('access-form-feedback');
 
-    const toast = document.createElement('div');
-    toast.className = `portal-toast ${isError ? 'error' : 'success'}`;
-    toast.textContent = message;
-    document.body.appendChild(toast);
+    if (!form || !userInput) return;
 
-    setTimeout(() => {
-      toast.classList.add('show');
-    }, 10);
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const aternosUsername = userInput.value.trim();
+      const minecraftIgn = ignInput ? ignInput.value.trim() : '';
 
-    setTimeout(() => {
-      toast.classList.remove('show');
-      setTimeout(() => toast.remove(), 300);
-    }, 3500);
+      // Anti-phishing check on client
+      const urlPattern = /(https?:\/\/|www\.|\.com|\.net|\.org|\.ru|\.gg|\.me|\.xyz|\/|\\|@)/i;
+      if (urlPattern.test(aternosUsername) || urlPattern.test(minecraftIgn)) {
+        if (feedback) {
+          feedback.style.display = 'block';
+          feedback.style.background = 'rgba(239, 68, 68, 0.15)';
+          feedback.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+          feedback.style.color = '#fca5a5';
+          feedback.textContent = 'Security Notice: Links and URLs are not permitted. Please enter your username only.';
+        }
+        showToast('Links are strictly forbidden.', true);
+        return;
+      }
+
+      try {
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Submitting...';
+        }
+
+        const res = await fetch(`${apiBase}/api/server/access-request`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            aternos_username: aternosUsername,
+            minecraft_ign: minecraftIgn
+          })
+        });
+
+        const data = await res.json();
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Request Server Access
+          `;
+        }
+
+        if (res.ok && data.success) {
+          if (feedback) {
+            feedback.style.display = 'block';
+            feedback.style.background = 'rgba(16, 185, 129, 0.15)';
+            feedback.style.border = '1px solid rgba(16, 185, 129, 0.4)';
+            feedback.style.color = '#34d399';
+            feedback.textContent = `✓ Access requested for Aternos user "${aternosUsername}"! An administrator will add your account.`;
+          }
+          form.reset();
+          showToast('Aternos username submitted successfully!');
+        } else {
+          if (feedback) {
+            feedback.style.display = 'block';
+            feedback.style.background = 'rgba(239, 68, 68, 0.15)';
+            feedback.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+            feedback.style.color = '#fca5a5';
+            feedback.textContent = data.error || 'Failed to submit request.';
+          }
+          showToast(data.error || 'Submission failed', true);
+        }
+      } catch (err) {
+        if (submitBtn) submitBtn.disabled = false;
+        showToast('Network error while submitting request.', true);
+      }
+    });
   }
+
+  setupAccessRequestForm();
 });

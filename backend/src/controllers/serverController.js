@@ -1,4 +1,11 @@
-const { getSettings, updateSettings } = require('../config/db');
+const {
+  getSettings,
+  updateSettings,
+  getAccessRequests,
+  addAccessRequest,
+  updateAccessRequestStatus,
+  deleteAccessRequest
+} = require('../config/db');
 
 async function getServerInfo(req, res) {
   try {
@@ -83,7 +90,140 @@ async function updateServerSettings(req, res) {
   }
 }
 
+/**
+ * Public endpoint: Submit Aternos username for server start access
+ * Strictly rejects links / URLs to prevent phishing
+ */
+async function submitAccessRequest(req, res) {
+  try {
+    const { aternos_username, minecraft_ign, note } = req.body;
+
+    if (!aternos_username || typeof aternos_username !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'Aternos username is required.'
+      });
+    }
+
+    const cleanUsername = aternos_username.trim();
+
+    // Anti-phishing check: strictly reject any links, protocols, or domain patterns
+    const urlPattern = /(https?:\/\/|www\.|\.com|\.net|\.org|\.ru|\.gg|\.me|\.xyz|\/|\\|@)/i;
+    if (urlPattern.test(cleanUsername) || (note && urlPattern.test(note)) || (minecraft_ign && urlPattern.test(minecraft_ign))) {
+      return res.status(400).json({
+        success: false,
+        error: 'Security Warning: Web links and URLs are strictly forbidden to protect against phishing.'
+      });
+    }
+
+    // Strict username character validation: letters, numbers, underscores, dots, hyphens (3-30 chars)
+    const validUsernamePattern = /^[a-zA-Z0-9_.-]{3,30}$/;
+    if (!validUsernamePattern.test(cleanUsername)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid username. Please enter a valid Aternos username (3–30 characters, letters/numbers/underscores only).'
+      });
+    }
+
+    // Sanitize optional fields
+    const cleanIgn = minecraft_ign ? String(minecraft_ign).trim().substring(0, 30) : '';
+    const cleanNote = note ? String(note).trim().substring(0, 100) : '';
+
+    const newRequest = addAccessRequest({
+      aternos_username: cleanUsername,
+      minecraft_ign: cleanIgn,
+      note: cleanNote
+    });
+
+    return res.json({
+      success: true,
+      message: 'Access request submitted! An administrator will add your Aternos account so you can start the server.',
+      request: {
+        id: newRequest.id,
+        aternos_username: newRequest.aternos_username,
+        status: newRequest.status
+      }
+    });
+  } catch (err) {
+    console.error('[SERVER CONTROLLER] Error submitting access request:', err);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to submit access request.'
+    });
+  }
+}
+
+/**
+ * Admin protected: Get all Aternos access requests
+ */
+async function listAccessRequests(req, res) {
+  try {
+    const requests = getAccessRequests();
+    return res.json({
+      success: true,
+      requests
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve access requests.'
+    });
+  }
+}
+
+/**
+ * Admin protected: Update request status (e.g. 'granted' or 'pending')
+ */
+async function updateRequestStatus(req, res) {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['pending', 'granted'].includes(status)) {
+      return res.status(400).json({ success: false, error: 'Status must be pending or granted.' });
+    }
+
+    const updated = updateAccessRequestStatus(id, status);
+    if (!updated) {
+      return res.status(404).json({ success: false, error: 'Request not found.' });
+    }
+
+    return res.json({
+      success: true,
+      message: `Request status updated to ${status}.`,
+      request: updated
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: 'Failed to update request status.' });
+  }
+}
+
+/**
+ * Admin protected: Delete access request
+ */
+async function removeAccessRequest(req, res) {
+  try {
+    const { id } = req.params;
+    const removed = deleteAccessRequest(id);
+
+    if (!removed) {
+      return res.status(404).json({ success: false, error: 'Request not found.' });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Access request removed.'
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: 'Failed to delete request.' });
+  }
+}
+
 module.exports = {
   getServerInfo,
-  updateServerSettings
+  updateServerSettings,
+  submitAccessRequest,
+  listAccessRequests,
+  updateRequestStatus,
+  removeAccessRequest
 };
