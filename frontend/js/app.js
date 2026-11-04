@@ -104,13 +104,17 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateStatus(state, message) {
     if (!apiStatusPill || !apiStatusDot || !apiStatusText) return;
 
+    const wakingNotice = document.getElementById('server-waking-notice');
+
     apiStatusDot.className = 'status-dot';
     if (state === 'online') {
       apiStatusDot.classList.add('online');
       apiStatusText.textContent = message || 'Portal Connected';
+      if (wakingNotice) wakingNotice.style.display = 'none';
     } else if (state === 'waking') {
       apiStatusDot.classList.add('warning');
       apiStatusText.textContent = message || 'Server waking up (~15s)...';
+      if (wakingNotice) wakingNotice.style.display = 'flex';
     } else if (state === 'offline') {
       apiStatusDot.classList.add('offline');
       apiStatusText.textContent = message || 'Portal Offline';
