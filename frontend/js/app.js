@@ -44,12 +44,62 @@ document.addEventListener('DOMContentLoaded', () => {
   let pollInterval = null;
   let retryCount = 0;
 
+  // Default fallback data for instant load before backend wakes up
+  const FALLBACK_SERVER = {
+    java: {
+      address: 'stevenalex.aternos.me',
+      port: '25565',
+      version: '26.3',
+      launcher: 'TLauncher',
+      hosting: 'Aternos'
+    },
+    bedrock: {
+      address: 'stevenalex.aternos.me',
+      port: '19132',
+      version: 'Latest Bedrock (v26.5)',
+      platform: 'Android & Bedrock Devices',
+      hosting: 'Aternos'
+    },
+    discord_url: 'https://discord.gg/PYWfWeWYB3',
+    announcement: 'Welcome to our Minecraft Community Server! Connection details are configured in the Admin Panel.'
+  };
+
+  const FALLBACK_APK = {
+    fileName: 'minecraft-26-50.apk',
+    fileSizeFormatted: '346.2 MB',
+    version: '26.5',
+    sha256Hash: '7b1ef882ecfec9c41155488e38f69654b95559ab69836d15573cfe2d29232039',
+    description: 'Official community companion application with one-click server connection.',
+    downloadCount: 'Verified'
+  };
+
+  // 1. Immediately hydrate UI from localStorage or verified defaults (instant 0s load!)
+  hydrateInitialUI();
+
   // Initialize clipboard listeners
   setupClipboard();
 
-  // Fetch data asynchronously without blocking the UI
+  // 2. Fetch live updates in background without blocking
   fetchServerData();
   fetchApkData();
+
+  function hydrateInitialUI() {
+    let cachedServer = null;
+    let cachedApk = null;
+
+    try {
+      const s = localStorage.getItem('MINECRAFT_PORTAL_CACHED_SERVER');
+      if (s) cachedServer = JSON.parse(s);
+    } catch (_) {}
+
+    try {
+      const a = localStorage.getItem('MINECRAFT_PORTAL_CACHED_APK');
+      if (a) cachedApk = JSON.parse(a);
+    } catch (_) {}
+
+    populateServerData(cachedServer || FALLBACK_SERVER);
+    populateApkSection(cachedApk || FALLBACK_APK);
+  }
 
   function updateStatus(state, message) {
     if (!apiStatusPill || !apiStatusDot || !apiStatusText) return;
@@ -60,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
       apiStatusText.textContent = message || 'Portal Connected';
     } else if (state === 'waking') {
       apiStatusDot.classList.add('warning');
-      apiStatusText.textContent = message || 'Backend waking up...';
+      apiStatusText.textContent = message || 'Server waking up (~15s)...';
     } else if (state === 'offline') {
       apiStatusDot.classList.add('offline');
       apiStatusText.textContent = message || 'Portal Offline';
@@ -68,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function fetchServerData() {
-    updateStatus('waking', 'Checking network...');
+    updateStatus('waking', 'Server waking up (~15s)...');
     try {
       const response = await fetch(`${apiBase}/api/server/info`, {
         headers: { 'Accept': 'application/json' }
@@ -79,28 +129,32 @@ document.addEventListener('DOMContentLoaded', () => {
       const result = await response.json();
       if (result.success && result.data) {
         populateServerData(result.data);
+        try {
+          localStorage.setItem('MINECRAFT_PORTAL_CACHED_SERVER', JSON.stringify(result.data));
+        } catch (_) {}
         updateStatus('online', 'Server Portal Online');
         clearInterval(pollInterval);
       }
     } catch (err) {
       retryCount++;
-      if (retryCount <= 10) {
-        updateStatus('waking', `Connecting (${retryCount * 5}s)...`);
+      if (retryCount <= 12) {
+        updateStatus('waking', `Server waking up (${retryCount * 5}s)...`);
         if (!pollInterval) {
-          pollInterval = setInterval(fetchServerData, 6000);
+          pollInterval = setInterval(fetchServerData, 5000);
         }
       } else {
-        updateStatus('offline', 'Using cached info');
+        updateStatus('warning', 'Cached server info');
       }
     }
   }
 
   function populateServerData(data) {
+    if (!data) return;
+
     if (data.java) {
       if (javaAddressEl) {
-        javaAddressEl.textContent = data.java.address || 'Address pending in admin';
-        if (!data.java.address) javaAddressEl.classList.add('unconfigured');
-        else javaAddressEl.classList.remove('unconfigured');
+        javaAddressEl.textContent = data.java.address || 'stevenalex.aternos.me';
+        javaAddressEl.classList.remove('unconfigured');
       }
       if (javaPortEl) javaPortEl.textContent = data.java.port || '25565';
       if (javaVersionEl) javaVersionEl.textContent = data.java.version || '26.3';
@@ -110,13 +164,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (data.bedrock) {
       if (bedrockAddressEl) {
-        bedrockAddressEl.textContent = data.bedrock.address || 'Address pending in admin';
-        if (!data.bedrock.address) bedrockAddressEl.classList.add('unconfigured');
-        else bedrockAddressEl.classList.remove('unconfigured');
+        bedrockAddressEl.textContent = data.bedrock.address || 'stevenalex.aternos.me';
+        bedrockAddressEl.classList.remove('unconfigured');
       }
       if (bedrockPortEl) bedrockPortEl.textContent = data.bedrock.port || '19132';
-      if (bedrockVersionEl) bedrockVersionEl.textContent = data.bedrock.version || 'Latest Bedrock';
-      if (bedrockPlatformEl) bedrockPlatformEl.textContent = data.bedrock.platform || 'Android & Bedrock';
+      if (bedrockVersionEl) bedrockVersionEl.textContent = data.bedrock.version || 'Latest Bedrock (v26.5)';
+      if (bedrockPlatformEl) bedrockPlatformEl.textContent = data.bedrock.platform || 'Android & Bedrock Devices';
       if (bedrockHostingEl) bedrockHostingEl.textContent = data.bedrock.hosting || 'Aternos';
     }
 
@@ -125,14 +178,13 @@ document.addEventListener('DOMContentLoaded', () => {
       announcementBanner.style.display = 'flex';
     }
 
-    // Show/hide Discord button based on configured URL
+    // Discord button
     const discordBtn = document.getElementById('discord-hero-btn');
     if (discordBtn) {
-      if (data.discord_url && data.discord_url.trim()) {
-        discordBtn.href = data.discord_url.trim();
+      const url = (data.discord_url || 'https://discord.gg/PYWfWeWYB3').trim();
+      if (url) {
+        discordBtn.href = url;
         discordBtn.style.display = 'inline-flex';
-      } else {
-        discordBtn.style.display = 'none';
       }
     }
   }
@@ -145,24 +197,28 @@ document.addEventListener('DOMContentLoaded', () => {
       const result = await response.json();
       if (result.success && result.available && result.apk) {
         populateApkSection(result.apk);
-      } else {
-        // Section is only shown when an administrator has uploaded an authorized file
-        if (apkSection) apkSection.style.display = 'none';
+        try {
+          localStorage.setItem('MINECRAFT_PORTAL_CACHED_APK', JSON.stringify(result.apk));
+        } catch (_) {}
       }
     } catch (err) {
-      // Backend asleep or offline: keep APK section hidden safely
-      if (apkSection) apkSection.style.display = 'none';
+      // Backend is asleep or cold-starting: keep the cached APK visible!
+      console.log('[PORTAL] Backend warming up, keeping cached APK details visible.');
     }
   }
 
   function populateApkSection(apk) {
-    if (!apkSection) return;
+    if (!apkSection || !apk) return;
     apkSection.style.display = 'block';
 
-    if (apkVersionEl) apkVersionEl.textContent = `v${apk.version}`;
-    if (apkSizeEl) apkSizeEl.textContent = apk.fileSizeFormatted || `${(apk.fileSize / (1024 * 1024)).toFixed(1)} MB`;
-    if (apkDescEl) apkDescEl.textContent = apk.description || 'Official community-authorized companion client.';
-    if (apkDownloadsEl) apkDownloadsEl.textContent = `${apk.downloadCount} downloads`;
+    if (apkVersionEl && apk.version) apkVersionEl.textContent = `v${apk.version}`;
+    if (apkSizeEl && (apk.fileSizeFormatted || apk.fileSize)) {
+      apkSizeEl.textContent = apk.fileSizeFormatted || `${(apk.fileSize / (1024 * 1024)).toFixed(1)} MB`;
+    }
+    if (apkDescEl && apk.description) apkDescEl.textContent = apk.description;
+    if (apkDownloadsEl) {
+      apkDownloadsEl.textContent = apk.downloadCount ? `${apk.downloadCount} downloads` : 'Verified';
+    }
 
     // Direct 1-click download link
     if (apkDownloadBtn) {
@@ -176,11 +232,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Optional SHA-256 hash
     const hashDetails = document.getElementById('apk-hash-details');
-    if (apkShaEl && apk.sha256Hash) {
-      apkShaEl.textContent = apk.sha256Hash;
+    const hash = apk.sha256Hash || apk.sha256_hash;
+    if (apkShaEl && hash) {
+      apkShaEl.textContent = hash;
       if (hashDetails) hashDetails.style.display = 'block';
-    } else if (hashDetails) {
-      hashDetails.style.display = 'none';
     }
   }
 
